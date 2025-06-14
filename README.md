@@ -1,6 +1,7 @@
 
 
-# Startup
+# Plane tracking with Apache Flink
+Complex event processing of ADS-B aviation data with Apache Flink. Using open-source Apache Flink stream processing to find aircraft missed landing approaches and paired runway landings.
 
 ## Docker
 Bring up docker, with containers for Kafka, Flink, Kafka connect and Schema registry
@@ -25,7 +26,9 @@ pip install -r requirements.txt
  ```
 
 ## Collect live aviation data
-Collect live aviation data from adsb.fi - community-driven flight tracker feed
+Collect live aviation data from [adsb.fi](https://adsb.fi/) - a community-driven flight tracker project with a free real-time API for personal projects. Their amazing [API](https://github.com/adsbfi/opendata/tree/main?tab=readme-ov-file#public-endpoints) returns aircraft transponder messages  within a nominated radius of a specified location point.
+
+We can poll the adsb.fi feed for aircraft transponder messages, and publish each location update as a new event into the `flights` Apache Kafka topic. Note the usage of the airport code `SYD` (Sydney) in this example
 
 ```bash
 python monitor_opendata.py --airport SYD --kafkaproducer
@@ -34,7 +37,7 @@ python monitor_opendata.py --airport SYD --kafkaproducer
 # Flink
 Start Flink SQL CLI
 
-```bash
+```
 docker compose exec flink-sql-client sql-client.sh
 ```
 
@@ -62,8 +65,8 @@ CREATE OR REPLACE TABLE flight (
   'format' = 'avro-confluent',
   'avro-confluent.url' = 'http://schema-registry:8081',
   'value.format' = 'avro-confluent',
-  'value.fields-include' = 'EXCEPT_KEY', -- set on key.fields property above, exclude the key in the value
-  'properties.auto.offset.reset' = 'earliest' -- needed for Kafka
+  'value.fields-include' = 'EXCEPT_KEY', 
+  'properties.auto.offset.reset' = 'earliest' 
 );
 
 SELECT *
@@ -101,7 +104,10 @@ where TIMESTAMPDIFF(second, desc_UTC, asc_UTC) between 0 and 1000;
 
 
 # Flink UDF 
-https://docs.confluent.io/cloud/current/flink/how-to-guides/create-udf.html
+
+A [user-defined function](https://docs.confluent.io/cloud/current/flink/how-to-guides/create-udf.html) (UDF) extends the capabilities of Apache Flink and enables us to implement custom logic beyond what is supported by SQL.
+
+
 
 ## Compile Java class
 ```bash
@@ -191,6 +197,6 @@ f2.callsign || ' ('  || COALESCE(f2.route, '-') ||')' || ' ' || f2.typecode AS f
 FROM flight_decorated f1, flight_decorated f2
 WHERE f1.flightts BETWEEN f2.flightts - interval '35' SECOND AND f2.flightts
 AND f1.callsign < f2.callsign
---AND f1.typecode = f2.typecode
+AND f1.typecode = f2.typecode
 AND DISTANCEKM(f1.latitude , f1.longtitude, f2.latitude, f2.longtitude) < 1.5;
 ```
