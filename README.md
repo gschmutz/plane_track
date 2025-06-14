@@ -3,6 +3,8 @@
 # Plane tracking with Apache Flink
 Complex event processing of ADS-B aviation data with Apache Flink. Using open-source Apache Flink stream processing to find aircraft missed landing approaches and paired runway landings.
 
+![Overview](./docs/overview.png)
+
 ## Docker
 Bring up docker, with containers for Kafka, Flink, Kafka connect and Schema registry
 
