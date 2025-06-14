@@ -1,0 +1,64 @@
+{
+    "namespace": "vsimon.serialization.avro",
+    "name": "Flight",
+    "type": "record",
+    "fields": [
+        {
+            "name": "callsign",
+            "type": "string"
+        },
+        {
+            "name": "latitude",
+            "type": "float"
+        },
+        {
+            "name": "longtitude",
+            "type": "float"
+        },
+        {
+            "name": "altitude",
+            "type": "long"
+        },                
+        {
+            "name": "sqwark",
+            "type": "string"
+        },
+        {
+            "name": "emergency",
+            "type": "string"
+        },
+        {
+            "name": "speed",
+            "type": "long"
+        },
+        {
+            "name": "icao",
+            "type": "string"
+        },  
+        {
+            "name": "track",
+            "type": "int"
+        },               
+        {
+         "name": "eventts",
+         "type": {
+            "type" : "long",
+            "flink.precision" : 2,
+            "flink.version" : "1",
+            "logicalType" : "local-timestamp-millis"
+            }
+        },
+        {
+         "name": "flightts",
+         "type": {
+            "type" : "long",
+            "flink.precision" : 2,
+            "flink.version" : "1",
+            "logicalType" : "local-timestamp-millis"
+            }
+        },        {
+            "name": "airport",
+            "type": "string"
+        }      
+    ]
+}

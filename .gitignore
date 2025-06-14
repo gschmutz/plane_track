@@ -1,0 +1,8 @@
+logs/*.csv
+__pycache__/*
+env/*
+*.jar
+*.class
+java/target/maven-status/maven-compiler-plugin/compile/default-compile/*
+data_csv/aircraft_lookup_aus.csv
+data_csv/flight_route_syd.csv
