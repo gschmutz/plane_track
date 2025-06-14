@@ -72,6 +72,8 @@ FROM flight;
 
 # Find missed approaches
 
+![Missed approach](./docs/missedapproach.png)
+
 ```sql
 SELECT *
 FROM flight
@@ -127,6 +129,8 @@ SELECT distancekm(-33.9401302, 151.175371, -37.840935, 144.946457) as dist_km;
 ```
 
 # Find similar aircraft flying on parallel tracks
+
+![Twin landings of 2 B737](./docs/twinplanes.png)
 
 ## Find interesting twin flights
 ```sql
