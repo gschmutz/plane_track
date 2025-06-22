@@ -2,6 +2,7 @@ import time
 import requests
 import logging
 import argparse
+import os
 from datetime import datetime
 from flight_avro_producer import MyProducer, Flight
 
@@ -23,8 +24,11 @@ airport_location = {
     # lat, lon
     'SYD': (-33.9401302, 151.175371),
     'LHR': (  51.470020,  -0.454295),
+    'SFO': (  37.618805, -122.375416),
     'LAX': (  33.942791,-118.410042),
+    'JFK': (  40.641311, -73.778139),
     'ATL': (  33.640411, -84.419853),
+    'ZRH': (  47.464722,  8.549167),
 }
 
 
@@ -41,8 +45,8 @@ def process_flight(file_name, flight, prd):
     if (flight.get('gs') is None or flight.get('gs') < 50):
         return
     
-    formatted_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    data = f'{formatted_timestamp},{flight.get('hex')},{flight.get('flight')},{flight.get('r')},{flight.get('t')},{flight.get('alt_baro')},{flight.get('alt_geom')},{flight.get('gs')},{flight.get('track')},{flight.get('lat')},{flight.get('lon')},{flight.get('squawk')},{flight.get('emergency')}'
+    formatted_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data = f"{formatted_timestamp},{flight.get('hex')},{flight.get('flight')},{flight.get('r')},{flight.get('t')},{flight.get('alt_baro')},{flight.get('alt_geom')},{flight.get('gs')},{flight.get('track')},{flight.get('lat')},{flight.get('lon')},{flight.get('squawk')},{flight.get('emergency')}"
     with open(file_name, 'a') as f:
         f.write(f'{data}\n')
 
@@ -62,19 +66,19 @@ def process_flight(file_name, flight, prd):
 
 def monitor_flights(args):
     airport = args.airport
-    file_name = f'./logs/{datetime.now().strftime('%Y%m%d%H%M%S')}_{airport}.csv'
+    file_name = f'./logs/{datetime.now().strftime("%Y%m%d%H%M%S")}_{airport}.csv'
     logging.info(f'Started scanning for {airport} - filename {file_name}')
     point_lat = airport_location[airport][0]
     point_lon = airport_location[airport][1]
 
     if (args.kafkaproducer):
-        prd = MyProducer(topic='flights', schema_file='avro/flight.avsc')
+        prd = MyProducer(topic='flights', schema_file='avro/flight.avsc', bootstrap_servers="PLAINTEXT://" + args.bootstrapServers, schema_registry=args.schemaRegistryUrl)
     else:
         prd = None
 
 
     with open(file_name, 'a') as f:
-        f.write(f'tm,hex,flight,registration,aircraft_type,altb,altg,gspeed,track,lat,lon,squawk,emergency\n')
+        f.write(f"tm,hex,flight,registration,aircraft_type,altb,altg,gspeed,track,lat,lon,squawk,emergency\n")
 
     while True:
         try:
@@ -91,9 +95,15 @@ def monitor_flights(args):
 
 
 if __name__ == '__main__':
+    # Read from environment variable first
+    default_airport = os.environ.get("AIRPORT", "SYD")
+    default_kafka = os.getenv("KAFKA_PRODUCER", "false").lower() in ("1", "true", "yes")
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('--airport', choices=['SYD', 'LHR', 'LAX', 'ATL'], required=True, help='Airport of operation.')
-    parser.add_argument('--kafkaproducer', action='store_true', help='Enable Kafka producer')
+    parser.add_argument('--airport', choices=['SYD', 'LHR', 'LAX', 'SFO', 'JFK', 'ATL','ZRH'], required=False, default=default_airport,help='Airport of operation.')
+    parser.add_argument('--kafkaproducer', action='store_true', default=default_kafka, help='Enable Kafka producer')
+    parser.add_argument('--bootstrapServers', required=False, default=os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"), help='Specify the Kafka bootstrap servers')
+    parser.add_argument('--schemaRegistryUrl', required=False, default=os.environ.get("KAFKA_SCHEMA_REGISTRY_URL", "http://localhost:8081"), help='Specify the Schema Registry URL')
 
     args = parser.parse_args()
     monitor_flights(args)
